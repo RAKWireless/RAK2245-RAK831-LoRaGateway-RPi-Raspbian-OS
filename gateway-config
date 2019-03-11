@@ -1,0 +1,249 @@
+#!/bin/bash
+
+do_setup_admin_password() {
+    dialog --title "Setup pi password" --msgbox "You will be asked to enter a new password." 5 60
+    passwd pi
+    RET=$?
+    if [ $RET -eq 0 ]; then
+        dialog --title "Setup pi password" --msgbox "Password has been changed succesfully." 5 60
+        do_main_menu
+    fi
+}
+
+do_setup_concentrator_shield() {
+#    FUN=$(dialog --title "Setup LoRa concentrator shield" --menu "Select shield:" 15 60 4 \
+#        1 "RAK      - RAK831 with GPS module" \
+#        2 "RAK      - RAK831 without GPS module" \
+#        3>&1 1>&2 2>&3)
+#    RET=$?
+#    if [ $RET -eq 1 ]; then
+#        do_main_menu
+#    elif [ $RET -eq 0 ]; then
+#        case "$FUN" in
+#            1) do_set_concentrator_reset_pin 17 && do_setup_channel_plan "rak831" ".gps";;
+             #do_set_concentrator_reset_pin 17 && do_setup_channel_plan "rak831" ""
+             do_setup_channel_plan "rak831" ""
+#x        esac
+#    fi
+}
+
+do_setup_ttn_channel_plan() {
+    # $1: concentrator type
+    # $2 ttn or loraserver
+    FUN=$(dialog --title "TTN Channel-plan configuration" --menu "Select the Channel-plan:" 18 60 12 \
+        1 "AS_923" \
+        2 "AU_915_928" \
+        3 "CN_470_510" \
+        4 "EU_863_870" \
+        5 "IN_865_867" \
+        6 "KR_920_923" \
+        7 "RU_864_870" \
+        8 "US_902_928" \
+        3>&1 1>&2 2>&3)
+    RET=$?
+    if [ $RET -eq 1 ]; then
+        do_main_menu
+    elif [ $RET -eq 0 ]; then
+        case "$FUN" in
+            1) do_copy_global_conf $1 "as_923" $2;;
+            2) do_copy_global_conf $1 "au_915_928" $2;;
+            3) do_copy_global_conf $1 "cn_470_510" $2;;
+            4) do_copy_global_conf $1 "eu_863_870" $2;;
+            5) do_copy_global_conf $1 "in_865_867" $2;;
+            6) do_copy_global_conf $1 "kr_920_923" $2;;
+            7) do_copy_global_conf $1 "ru_864_870" $2;;
+            8) do_copy_global_conf $1 "us_902_928" $2;;
+        esac
+    fi
+}
+
+set_lora_server_ip()
+{
+    rm /tmp/gate_server_ip -rf
+    mkfifo /tmp/gate_server_ip
+    dialog --title "Gateway Server IP" --nocancel --inputbox "SERVER_IP:" 10 40 "192.168.1.1" 2> /tmp/gate_server_ip & 
+    RET=$?
+	
+    if [ $RET -eq 1 ]; then
+        do_main_menu
+    elif [ $RET -eq 0 ]; then
+        gate_server_ip="$( cat /tmp/gate_server_ip  )" 
+        sed -i "s/^.*server_address.*$/\t\"server_address\": \"$gate_server_ip\",/" /opt/ttn-gateway/packet_forwarder/lora_pkt_fwd/global_conf.json
+        rm /tmp/gate_server_ip
+        do_set_gateway_id
+    fi
+}
+
+do_setup_lora_server_channel_plan() {
+    # $1: concentrator type
+    # $2: config suffix, eg ".gps"
+    FUN=$(dialog --title "Lora Server Channel-plan configuration" --menu "Server the Channel-plan:" 18 60 12 \
+        1 "AS_923" \
+        2 "AU_915_928" \
+        3 "CN_470_510" \
+        4 "EU_433" \
+        5 "EU_863_870" \
+        6 "IN_865_867" \
+        7 "KR_920_923" \
+        8 "RU_864_870" \
+        9 "US_902_928" \
+        3>&1 1>&2 2>&3)
+    RET=$?
+    if [ $RET -eq 1 ]; then
+        do_main_menu
+    elif [ $RET -eq 0 ]; then
+        case "$FUN" in
+            1) do_copy_global_conf $1 "as_923" $2;;
+            2) do_copy_global_conf $1 "au_915_928" $2;;
+            3) do_copy_global_conf $1 "cn_470_510" $2;;
+            4) do_copy_global_conf $1 "eu_433" $2;;
+            5) do_copy_global_conf $1 "eu_863_870" $2;;
+            6) do_copy_global_conf $1 "in_865_867" $2;;
+            7) do_copy_global_conf $1 "kr_920_923" $2;;
+            8) do_copy_global_conf $1 "ru_864_870" $2;;
+            9) do_copy_global_conf $1 "us_902_928" $2;;
+        esac
+    fi
+}
+ 
+do_setup_channel_plan() {
+    # $1: concentrator type
+    # $2: config suffix, eg ".gps"
+    FUN=$(dialog --title "Server-plan configuration" --menu "Select the Server-plan:" 15 60 3 \
+        1 "Server is TTN" \
+        2 "Server is LoRa Server" \
+        3>&1 1>&2 2>&3)
+    RET=$?
+    if [ $RET -eq 1 ]; then
+        do_main_menu
+    elif [ $RET -eq 0 ]; then
+        case "$FUN" in
+            1) do_setup_ttn_channel_plan $1 "ttn";;
+            2) do_setup_lora_server_channel_plan $1 "lora_server";;
+        esac
+    fi
+}
+
+do_prompt_concentrator_reset_pin() {
+    PIN=$(dialog --inputbox "To which pin is the concentrator reset connected: " 8 60 \
+        3>&1 1>&2 2>&3)
+    RET=$?
+    if [ $RET -eq 1 ]; then
+        do_setup_concentrator_shield
+    elif [ $RET -eq 0 ]; then
+        do_set_concentrator_reset_pin $PIN
+    fi
+}
+
+do_set_concentrator_reset_pin() {
+#    sed -i "s/^\(CONCENTRATOR_RESET_PIN=\).*$/\1$1/" /etc/default/lora-packet-forwarder
+    echo "aaa"
+}
+
+do_copy_global_conf() {
+    cp /etc/lora_conf/serial/global_conf.$2.json /opt/ttn-gateway/packet_forwarder/lora_pkt_fwd/global_conf.json
+
+	if [ $3 != "ttn" ]; then
+		set_lora_server_ip
+	else
+		dialog --title "Server-plan configuration" --msgbox "Server-plan configuration has been copied." 5 60
+        do_set_gateway_id
+	fi
+}
+
+do_set_gateway_id() {
+#    /opt/lora-packet-forwarder/update_gwid.sh /etc/lora-packet-forwarder/global_conf.json
+#    RET=$?
+#    if [ $RET -eq 0 ]; then
+#        dialog --title "Set Gateway ID" --msgbox "The Gateway ID has been set." 5 60
+        do_restart_packet_forwarder
+#    fi
+}
+
+do_setup_concentrator_shield_rak_rak831() {
+    FUN=$(dialog --title "RAK - RAK831/RAK2245 configuration" --menu "Select configuration:" 15 60 4 \
+        eu868.json     "EU868 band" \
+        eu868.json.gps "EU868 band + GPS" \
+        3>&1 1>&2 2>&3)
+    RET=$?
+    if [ $RET -eq 1 ]; then
+        do_setup_concentrator_shield
+    elif [ $RET -eq 0 ]; then
+        return 1
+    fi
+}
+
+
+do_restart_packet_forwarder() {
+    systemctl restart ttn-gateway
+    RET=$?
+    if [ $RET -eq 0 ]; then
+        dialog --title "Restart packet-forwarder" --msgbox "The packet-forwarder has been restarted." 5 60
+        do_main_menu
+    fi
+
+}
+
+do_configure_wifi() {
+	rm /tmp/wifi_ssid -rf
+    mkfifo /tmp/wifi_ssid
+    rm /tmp/wifi_pwd -rf
+    mkfifo /tmp/wifi_pwd
+    dialog --title "Configure WIFI" --nocancel --inputbox "SSID:" 10 40  2> /tmp/wifi_ssid &
+    if [ $RET -ne 0 ]; then
+    	do_main_menu
+    fi
+    dialog --title "Configure WIFI" --nocancel --inputbox "Password:" 10 40  2> /tmp/wifi_pwd &
+    if [ $RET -ne 0 ]; then
+    	do_main_menu
+    fi
+    
+    linenum=`sed -n '/update_config/=' /etc/wpa_supplicant/wpa_supplicant.conf`
+    let linenum=linenum+1
+    
+    wifi_ssid="$( cat /tmp/wifi_ssid  )"
+    wifi_pwd="$( cat /tmp/wifi_pwd  )"
+    ssid_len=${#wifi_ssid}
+    pwd_len=${#wifi_pwd}
+    
+    if [ $ssid_len -eq 0 ]; then
+    	dialog --title "Configure WIFI" --msgbox "SSID cannot be empty." 5 28
+    	do_main_menu
+    fi
+    
+    if [ $pwd_len -eq 0 ] || [ $pwd_len -lt 8 ] ||[ $pwd_len -gt 63 ]; then
+    	dialog --title "Configure WIFI" --msgbox "Invalid passphrase length ${pwd_len} (expected: 8..63)." 5 52
+ #   	do_main_menu
+    else
+        sed -i "${linenum}inetwork={\nssid=\"${wifi_ssid}\"\nkey_mgmt=WPA-PSK\npsk=\"${wifi_pwd}\"\n}" /etc/wpa_supplicant/wpa_supplicant.conf
+    fi
+    
+
+    do_main_menu
+}
+
+do_main_menu() {
+    VER=`cat /usr/bin/rak-version.txt`
+    FUN=$(dialog --title "Rak Gateway (Version: $VER)" --cancel-label "Quit" --menu "Configuration options:" 14 80 20 \
+        1 "Set pi password" \
+        2 "Setup RAK831/RAK2245 LoRa concentrator" \
+        3 "Edit packet-forwarder config" \
+        4 "Restart packet-forwarder" \
+        5 "Configure WIFI" \
+        3>&1 1>&2 2>&3)
+    RET=$?
+    if [ $RET -eq 1 ]; then
+        clear
+        return 0
+    elif [ $RET -eq 0 ]; then
+        case "$FUN" in
+            1) do_setup_admin_password;;
+            2) do_setup_concentrator_shield;;
+            3) nano /opt/ttn-gateway/packet_forwarder/lora_pkt_fwd/global_conf.json && do_main_menu;;
+            4) do_restart_packet_forwarder;;
+            5) do_configure_wifi;;
+        esac
+    fi
+}
+
+do_main_menu
