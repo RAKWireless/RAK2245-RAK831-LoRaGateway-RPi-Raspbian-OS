@@ -2,4 +2,4 @@
 
 VER=`cat /usr/bin/rak-version.txt`
 
-echo "rakwireless gateway 7243 version $VER"
+echo "rakwireless gateway 2245 version $VER"
