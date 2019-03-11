@@ -97,7 +97,7 @@ cp $SCRIPT_DIR/set_eui.sh ./lora_pkt_fwd/set_eui.sh
 cp $SCRIPT_DIR/update_gwid.sh ./lora_pkt_fwd/update_gwid.sh
 cp $SCRIPT_DIR/global_conf.json ./lora_pkt_fwd/global_conf.json
 cp $SCRIPT_DIR/lora_pkt_fwd.c ./lora_pkt_fwd/src/lora_pkt_fwd.c
-
+rm ./lora_pkt_fwd/local_conf.json
 make
 
 popd
