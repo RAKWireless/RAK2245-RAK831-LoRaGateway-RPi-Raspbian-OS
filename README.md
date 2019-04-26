@@ -15,6 +15,10 @@ This project currently provides support for the below platforms.
 
 ##	Changelog
 
+2019-04-26 RAK V2.4
+
+* Add loraserver
+
 2019-03-19 RAK V2.2
 
 * Initial version
