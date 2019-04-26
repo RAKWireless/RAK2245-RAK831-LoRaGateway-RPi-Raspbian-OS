@@ -61,7 +61,7 @@ set_lora_server_ip()
 {
     rm /tmp/gate_server_ip -rf
     mkfifo /tmp/gate_server_ip
-    dialog --title "Gateway Server IP" --nocancel --inputbox "SERVER_IP:" 10 40 "192.168.1.1" 2> /tmp/gate_server_ip & 
+    dialog --title "Gateway Server IP" --nocancel --inputbox "SERVER_IP:" 10 40 "127.0.0.1" 2> /tmp/gate_server_ip & 
     RET=$?
 	
     if [ $RET -eq 1 ]; then
@@ -140,15 +140,23 @@ do_set_concentrator_reset_pin() {
     echo "aaa"
 }
 
+restart_loraserver_service()
+{
+    systemctl restart loraserver
+    systemctl restart lora-app-server.service
+}
+
 do_copy_global_conf() {
     cp /etc/lora_conf/serial/global_conf.$2.json /opt/ttn-gateway/packet_forwarder/lora_pkt_fwd/global_conf.json
 
-	if [ $3 != "ttn" ]; then
-		set_lora_server_ip
-	else
-		dialog --title "Server-plan configuration" --msgbox "Server-plan configuration has been copied." 5 60
+    cp /etc/loraserver/loraserver.$2.toml /etc/loraserver/loraserver.toml
+
+    if [ $3 != "ttn" ]; then
+        set_lora_server_ip
+    else
+        dialog --title "Server-plan configuration" --msgbox "Server-plan configuration has been copied." 5 60
         do_set_gateway_id
-	fi
+    fi
 }
 
 do_set_gateway_id() {
@@ -158,6 +166,7 @@ do_set_gateway_id() {
 #        dialog --title "Set Gateway ID" --msgbox "The Gateway ID has been set." 5 60
         do_restart_packet_forwarder
 #    fi
+        restart_loraserver_service
 }
 
 do_setup_concentrator_shield_rak_rak831() {
@@ -223,8 +232,20 @@ do_configure_wifi() {
 }
 
 do_main_menu() {
+    GATEWAY_EUI_NIC="eth0"
+    if [[ `grep "$GATEWAY_EUI_NIC" /proc/net/dev` == "" ]]; then
+        GATEWAY_EUI_NIC="wlan0"
+    fi
+
+    if [[ `grep "$GATEWAY_EUI_NIC" /proc/net/dev` == "" ]]; then
+       echo "ERROR: No network interface found. Cannot set gateway ID."
+    fi
+    GATEWAY_EUI=$(ip link show $GATEWAY_EUI_NIC | awk '/ether/ {print $2}' | awk -F\: '{print $1$2$3"FFFE"$4$5$6}')
+    GATEWAY_EUI=${GATEWAY_EUI^^}
+
+
     VER=`cat /usr/bin/rak-version.txt`
-    FUN=$(dialog --title "Rak Gateway (Version: $VER)" --cancel-label "Quit" --menu "Configuration options:" 14 80 20 \
+    FUN=$(dialog --title "Rak Gateway (Gateway ID:$GATEWAY_EUI Version: $VER)" --cancel-label "Quit" --menu "Configuration options:" 14 80 20 \
         1 "Set pi password" \
         2 "Setup RAK831/RAK2245 LoRa concentrator" \
         3 "Edit packet-forwarder config" \

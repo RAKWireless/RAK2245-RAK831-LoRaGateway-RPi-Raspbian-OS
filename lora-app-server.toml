@@ -1,0 +1,9 @@
+[general]
+log_level=4
+
+[postgresql]
+dsn="postgres://loraserver_as:dbpassword@localhost/loraserver_as?sslmode=disable"
+
+  [application_server.external_api]
+  jwt_secret="verysecret"
+  

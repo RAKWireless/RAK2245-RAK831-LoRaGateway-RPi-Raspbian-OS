@@ -141,6 +141,9 @@ cp rak-version* /usr/bin/
 cp lora_conf /etc/ -rf
 #cp config.txt /boot/config.txt
 
+echo "Install loraserver"
+./loraserver_install
+
 echo "The system will reboot in 5 seconds..."
 sleep 5
 shutdown -r now
