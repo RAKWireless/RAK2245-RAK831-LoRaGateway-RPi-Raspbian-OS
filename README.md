@@ -10,8 +10,9 @@ The aim of this project is to help users set up a LoRa network easily. The User 
 
 This project currently provides support for the below platforms.
 
-* RAK2245
-* RAK831
+* RAK2245 + RPi
+* RAK831 + RPi
+* RAK7243 without LTE
 
 ##	Changelog
 
@@ -22,6 +23,10 @@ This project currently provides support for the below platforms.
 2019-03-19 RAK V2.2
 
 * Initial version
+
+##    Precompiled Firmware image
+If you want to use a precompiled firmware image directly, please download the latest one from RAK website:
+https://www.rakwireless.com/en/download/LoRa/RAK2245-Pi-HAT#Firmware
 
 ##	Installation procedure
 
@@ -45,3 +50,7 @@ step4 : Next you will see some messages as follow. Just hit the Enter key to kee
 step5 : Now you have a running gateway after restart!
 
 step6 (Optional):You can use the command "sudo gateway-config" to select other bands if your hardware supports.
+
+##   How to use it?
+Please have a look at the getting start document on RAK website:
+https://www.rakwireless.com/en/download/LoRa/RAK2245-Pi-HAT#Application-Notes
