@@ -28,7 +28,8 @@ This project currently provides support for the below platforms.
 If you want to use a precompiled firmware image directly, please download the latest one from RAK website:
 https://www.rakwireless.com/en/download/LoRa/RAK2245-Pi-HAT#Firmware
 
-##	Installation procedure
+##	Install by yourself
+If you want to install from zore by yourself, please do as the following steps:
 
 step1 : Download and install [Raspbian Stretch LITE](https://www.raspberrypi.org/downloads/raspbian/) 
 
