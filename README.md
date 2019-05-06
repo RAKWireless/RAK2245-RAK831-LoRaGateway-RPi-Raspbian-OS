@@ -16,6 +16,10 @@ This project currently provides support for the below platforms.
 
 ##	Changelog
 
+2019-05-06 RAK V2.5
+
+* Add AP mode
+
 2019-04-26 RAK V2.4
 
 * Add loraserver

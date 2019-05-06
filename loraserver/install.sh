@@ -22,7 +22,7 @@ fi
 
 GATEWAY_EUI=$(ip link show $GATEWAY_EUI_NIC | awk '/ether/ {print $2}' | awk -F\: '{print $1$2$3"FFFE"$4$5$6}')
 GATEWAY_EUI=${GATEWAY_EUI^^} 
-sed  -i "s/0000000000000888/$GATEWAY_EUI/g"  all.sql
+sed  -i "s/0000000000000888/$GATEWAY_EUI/g"  init_sql.sql
 
 apt list --upgradable
 
