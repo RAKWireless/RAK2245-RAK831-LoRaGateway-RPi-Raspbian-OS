@@ -193,8 +193,31 @@ do_restart_packet_forwarder() {
 
 }
 
-do_configure_wifi() {
-	rm /tmp/wifi_ssid -rf
+enable_ap_mode()
+{
+    systemctl enable create_ap
+
+    if [ -f "/sbin/wpa_supplicant" ]; then
+        mv /sbin/wpa_supplicant /sbin/wpa_supplicant_bak
+    fi
+
+    dialog --title "Enable AP Mode" --msgbox "The AP mode will active after the operating system reboot." 5 70
+}
+
+enable_wifi_mode()
+{
+    systemctl disable create_ap
+
+    if [ -f "/sbin/wpa_supplicant_bak" ]; then
+        mv /sbin/wpa_supplicant_bak /sbin/wpa_supplicant
+    fi
+
+    dialog --title "Enable Wifi Mode" --msgbox "The Wifi mode will active after the operating system reboot." 5 70
+}
+
+add_new_ssid()
+{
+    rm /tmp/wifi_ssid -rf
     mkfifo /tmp/wifi_ssid
     rm /tmp/wifi_pwd -rf
     mkfifo /tmp/wifi_pwd
@@ -226,7 +249,25 @@ do_configure_wifi() {
     else
         sed -i "${linenum}inetwork={\nssid=\"${wifi_ssid}\"\nkey_mgmt=WPA-PSK\npsk=\"${wifi_pwd}\"\n}" /etc/wpa_supplicant/wpa_supplicant.conf
     fi
-    
+}
+
+do_configure_wifi() {
+    FUN=$(dialog --title "Configure wifi" --cancel-label "Quit" --menu "Configuration options:" 12 60 20 \
+    	1 "Enable AP Mode/Disable Wifi Mode"	\
+        2 "Enable Wifi Mode/Disable AP Mode" \
+        3 "Add New SSID for Wifi" \
+        3>&1 1>&2 2>&3)
+    RET=$?
+    if [ $RET -eq 1 ]; then
+        clear
+        return 0
+    elif [ $RET -eq 0 ]; then
+        case "$FUN" in
+            1) enable_ap_mode;;
+            2) enable_wifi_mode;;
+            3) add_new_ssid;;
+        esac
+    fi
 
     do_main_menu
 }
