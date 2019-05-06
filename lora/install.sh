@@ -77,7 +77,9 @@ pushd $INSTALL_DIR
 
 # Build LoRa gateway app
 
-git clone https://github.com/Lora-net/lora_gateway.git
+if [ ! -d lora_gateway ]; then
+    git clone https://github.com/Lora-net/lora_gateway.git
+fi
 
 pushd lora_gateway
 
@@ -89,7 +91,10 @@ popd
 
 # Build packet forwarder
 
-git clone https://github.com/Lora-net/packet_forwarder.git
+if [ ! -d packet_forwarder ]; then
+    git clone https://github.com/Lora-net/packet_forwarder.git
+fi
+
 pushd packet_forwarder
 
 cp $SCRIPT_DIR/start.sh ./lora_pkt_fwd/start.sh
