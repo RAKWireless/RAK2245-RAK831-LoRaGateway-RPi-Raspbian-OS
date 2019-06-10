@@ -5,7 +5,7 @@ Description=The Things Network Gateway
 WorkingDirectory=/opt/ttn-gateway/packet_forwarder/lora_pkt_fwd/
 ExecStart=/opt/ttn-gateway/packet_forwarder/lora_pkt_fwd/start.sh
 SyslogIdentifier=ttn-gateway
-Restart=on-failure
+Restart=always
 RestartSec=5
 
 [Install]
