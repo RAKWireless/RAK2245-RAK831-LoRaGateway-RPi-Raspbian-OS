@@ -1,5 +1,29 @@
 #!/bin/bash
 
+check_ipaddr()
+{
+    echo $1|grep "^[0-9]\{1,3\}\.\([0-9]\{1,3\}\.\)\{2\}[0-9]\{1,3\}$" > /dev/null;
+    if [ $? -ne 0 ]
+    then
+        echo "Bad IP address" 
+        return 1
+    fi
+    ipaddr=$1
+    a=`echo $ipaddr|awk -F . '{print $1}'`
+    b=`echo $ipaddr|awk -F . '{print $2}'`
+    c=`echo $ipaddr|awk -F . '{print $3}'`
+    d=`echo $ipaddr|awk -F . '{print $4}'`
+    for num in $a $b $c $d
+    do
+        if [ $num -gt 255 ] || [ $num -lt 0 ] 
+        then
+            echo "Bad IP address" 
+            return 1
+        fi
+   done
+
+   return 0
+}
 do_setup_admin_password() {
     dialog --title "Setup pi password" --msgbox "You will be asked to enter a new password." 5 60
     passwd pi
@@ -61,7 +85,7 @@ set_lora_server_ip()
 {
     rm /tmp/gate_server_ip -rf
     mkfifo /tmp/gate_server_ip
-    dialog --title "Gateway Server IP" --nocancel --inputbox "SERVER_IP:" 10 40 "127.0.0.1" 2> /tmp/gate_server_ip & 
+    dialog --title "LoRaServer IP" --nocancel --inputbox "SERVER_IP:" 10 40 "127.0.0.1" 2> /tmp/gate_server_ip & 
     RET=$?
 	
     if [ $RET -eq 1 ]; then
@@ -77,7 +101,7 @@ set_lora_server_ip()
 do_setup_lora_server_channel_plan() {
     # $1: concentrator type
     # $2: config suffix, eg ".gps"
-    FUN=$(dialog --title "Lora Server Channel-plan configuration" --menu "Server the Channel-plan:" 18 60 12 \
+    FUN=$(dialog --title "LoRaServer Channel-plan configuration" --menu "Server the Channel-plan:" 18 60 12 \
         1 "AS_923" \
         2 "AU_915_928" \
         3 "CN_470_510" \
@@ -111,7 +135,7 @@ do_setup_channel_plan() {
     # $2: config suffix, eg ".gps"
     FUN=$(dialog --title "Server-plan configuration" --menu "Select the Server-plan:" 15 60 3 \
         1 "Server is TTN" \
-        2 "Server is LoRa Server" \
+        2 "Server is LoRaServer" \
         3>&1 1>&2 2>&3)
     RET=$?
     if [ $RET -eq 1 ]; then
@@ -170,7 +194,7 @@ do_set_gateway_id() {
 }
 
 do_setup_concentrator_shield_rak_rak831() {
-    FUN=$(dialog --title "RAK - RAK831/RAK2245 configuration" --menu "Select configuration:" 15 60 4 \
+    FUN=$(dialog --title "RAK - Rak Gateway configuration" --menu "Select configuration:" 15 60 4 \
         eu868.json     "EU868 band" \
         eu868.json.gps "EU868 band + GPS" \
         3>&1 1>&2 2>&3)
@@ -200,7 +224,7 @@ enable_ap_mode()
     if [ -f "/sbin/wpa_supplicant" ]; then
         mv /sbin/wpa_supplicant /sbin/wpa_supplicant_bak
     fi
-
+    echo "ap" > /usr/local/rak/gateway-config-info/wifi_mode
     dialog --title "Enable AP Mode" --msgbox "The AP mode will active after the operating system reboot." 5 70
 }
 
@@ -212,7 +236,76 @@ enable_wifi_mode()
         mv /sbin/wpa_supplicant_bak /sbin/wpa_supplicant
     fi
 
+    echo "wifi" > /usr/local/rak/gateway-config-info/wifi_mode
     dialog --title "Enable Wifi Mode" --msgbox "The Wifi mode will active after the operating system reboot." 5 70
+}
+
+modify_ssid_for_ap()
+{
+    echo "aaa"
+    rm /tmp/rak_ssid -rf
+    mkfifo /tmp/rak_ssid
+    rm /tmp/rak_ap_pwd -rf
+    mkfifo /tmp/rak_ap_pwd
+    
+    # get old ssid
+    if [ -f /usr/local/rak/gateway-config-info/ap_ssid ]; then
+        old_ap_ssid="$( cat /usr/local/rak/gateway-config-info/ap_ssid  )"
+    else
+        echo "Rakwireless_XXXX" > /usr/local/rak/gateway-config-info/ap_ssid
+    fi
+    old_ap_ssid="$( cat /usr/local/rak/gateway-config-info/ap_ssid  )"
+    
+    # get old pwd
+    if [ -f /usr/local/rak/gateway-config-info/ap_pwd ]; then
+        old_ap_pwd="$( cat /usr/local/rak/gateway-config-info/ap_pwd  )"
+    else
+        echo "rakwireless" > /usr/local/rak/gateway-config-info/ap_pwd
+    fi
+    old_ap_pwd="$( cat /usr/local/rak/gateway-config-info/ap_pwd  )"
+    
+    # dialog ip
+    dialog --title "AP SSID" --nocancel --inputbox "SSID:" 10 40 "$old_ap_ssid" 2> /tmp/rak_ssid & 
+    RET=$?
+
+    if [ $RET -eq 1 ]; then
+        clear
+    elif [ $RET -eq 0 ]; then
+        new_ap_ssid="$( cat /tmp/rak_ssid  )"
+        rm /tmp/rak_ssid
+        ssid_len=${#new_ap_ssid}
+    fi
+    
+    #dialog pwd
+    dialog --title "AP Password" --nocancel --inputbox "Password:" 10 40 "$old_ap_pwd"  2> /tmp/rak_ap_pwd &
+    if [ $RET -ne 0 ]; then
+    	clear
+    else
+        new_ap_pwd="$( cat /tmp/rak_ap_pwd  )"
+        pwd_len=${#new_ap_pwd}
+        rm /tmp/rak_ap_pwd
+        
+    fi
+    
+    if [ $ssid_len -eq 0 ] || [ $pwd_len -eq 0 ] || [ $pwd_len -lt 8 ] ||[ $pwd_len -gt 63 ]; then
+        if [ $ssid_len -eq 0 ]; then
+            dialog --title "Configure AP SSID" --msgbox "SSID cannot be empty." 5 28
+        elif [ $pwd_len -eq 0 ] || [ $pwd_len -lt 8 ] ||[ $pwd_len -gt 63 ]; then
+            dialog --title "Configure AP Password" --msgbox "Invalid passphrase length ${pwd_len} (expected: 8..63)." 5 52
+        else
+            clear
+        fi
+    else
+        sed -i "26c SSID=$new_ap_ssid" /usr/local/rak/ap/create_ap.conf
+        sed -i "27c PASSPHRASE=$new_ap_pwd" /usr/local/rak/ap/create_ap.conf
+    
+        echo $new_ap_ssid > /usr/local/rak/gateway-config-info/ap_ssid
+        echo $new_ap_pwd > /usr/local/rak/gateway-config-info/ap_pwd
+
+        dialog --title "Configute AP info" --msgbox "Modify AP info success" 5 42
+	fi
+    
+#    do_main_menu
 }
 
 add_new_ssid()
@@ -252,25 +345,106 @@ add_new_ssid()
 }
 
 do_configure_wifi() {
-    FUN=$(dialog --title "Configure wifi" --cancel-label "Quit" --menu "Configuration options:" 12 60 20 \
-    	1 "Enable AP Mode/Disable Wifi Mode"	\
-        2 "Enable Wifi Mode/Disable AP Mode" \
-        3 "Add New SSID for Wifi" \
+    # get old ip
+    if [ -f /usr/local/rak/gateway-config-info/wifi_mode ]; then
+        wifi_mode="$( cat /usr/local/rak/gateway-config-info/wifi_mode  )"
+    else
+        echo "ap" > /usr/local/rak/gateway-config-info/wifi_mode
+    fi
+    
+    default_item=2
+    if [ $wifi_mode != "ap" ]; then
+		let default_item=2
+	fi
+
+    FUN=$(dialog --title "Configure wifi" --cancel-label "Cancel" --default-item $default_item --menu "Configuration options:" 12 60 20 \
+    	1 "Enable AP Mode/Disable Client Mode"	\
+        2 "Enable Client Mode/Disable AP Mode" \
+        3 "Modify SSID and pwd for AP Mode"	\
+        4 "Add New SSID for Client" \
         3>&1 1>&2 2>&3)
     RET=$?
-    if [ $RET -eq 1 ]; then
-        clear
-        return 0
-    elif [ $RET -eq 0 ]; then
+    if [ $RET -eq 0 ]; then
         case "$FUN" in
             1) enable_ap_mode;;
             2) enable_wifi_mode;;
-            3) add_new_ssid;;
+            3) modify_ssid_for_ap;;
+            4) add_new_ssid;;
         esac
     fi
 
     do_main_menu
 }
+
+configure_lan() {
+    rm /tmp/eth0_ip -rf
+    mkfifo /tmp/eth0_ip
+
+    rm /tmp/eth0_gw -rf
+    mkfifo /tmp/eth0_gw
+
+    # get old ip
+    if [ -f /usr/local/rak/gateway-config-info/eth0_ip ]; then
+        old_eth0_ip="$( cat /usr/local/rak/gateway-config-info/eth0_ip  )"
+    else
+        echo "192.168.10.10" > /usr/local/rak/gateway-config-info/eth0_ip
+    fi
+    old_eth0_ip="$( cat /usr/local/rak/gateway-config-info/eth0_ip  )"
+
+    # dialog ip
+    dialog --title "Set eth0 IP" --nocancel --inputbox "IP:" 10 40 "$old_eth0_ip" 2> /tmp/eth0_ip & 
+    RET=$?
+
+    if [ $RET -eq 1 ]; then
+        echo "do_main_menu"
+    elif [ $RET -eq 0 ]; then
+        new_eth0_ip="$( cat /tmp/eth0_ip  )" 
+        check_ipaddr $new_eth0_ip
+        RET_IP=$?
+        rm /tmp/eth0_ip
+    fi
+
+    # get old gw
+    if [ -f /usr/local/rak/gateway-config-info/eth0_gw ]; then
+        old_eth0_gw="$( cat /usr/local/rak/gateway-config-info/eth0_gw  )"
+    else
+        echo "192.168.10.1" > /usr/local/rak/gateway-config-info/eth0_gw
+    fi
+    old_eth0_gw="$( cat /usr/local/rak/gateway-config-info/eth0_gw  )"
+
+    # dialog eth0 gw
+    dialog --title "Set eth0 gateway IP" --nocancel --inputbox "Gateway IP:" 10 40 "$old_eth0_gw" 2> /tmp/eth0_gw & 
+    RET=$?
+
+    if [ $RET -eq 1 ]; then
+        echo "do_main_menu"
+    elif [ $RET -eq 0 ]; then
+        new_eth0_gw="$( cat /tmp/eth0_gw  )" 
+        check_ipaddr $new_eth0_gw
+        RET_GW=$?
+        rm /tmp/eth0_gw
+    fi
+    
+    if [ $RET_IP -eq 1 ]; then
+        dialog --title "Configure LAN" --msgbox "Invalid IP address." 5 50
+    elif [ $RET_GW -eq 1 ]; then
+        dialog --title "Configure LAN" --msgbox "Invalid Gateway IP address." 5 50
+    else
+        echo $new_eth0_ip > /usr/local/rak/gateway-config-info/eth0_ip
+        echo $new_eth0_gw > /usr/local/rak/gateway-config-info/eth0_gw
+
+        linenum=`sed -n '/RAK_eth0_IP/=' /etc/dhcpcd.conf`
+        let line_ip=linenum+2
+        let line_gw=linenum+3
+
+        sed -i "${line_ip}cstatic ip_address=${new_eth0_ip}" /etc/dhcpcd.conf
+        sed -i "${line_gw}cstatic routers=${new_eth0_gw}" /etc/dhcpcd.conf
+        dialog --title "Configure LAN" --msgbox "Configure LAN success." 5 50
+    fi
+
+    do_main_menu
+}
+
 
 do_main_menu() {
     GATEWAY_EUI_NIC="eth0"
@@ -284,14 +458,14 @@ do_main_menu() {
     GATEWAY_EUI=$(ip link show $GATEWAY_EUI_NIC | awk '/ether/ {print $2}' | awk -F\: '{print $1$2$3"FFFE"$4$5$6}')
     GATEWAY_EUI=${GATEWAY_EUI^^}
 
-
-    VER=`cat /usr/bin/rak-version.txt`
-    FUN=$(dialog --title "Rak Gateway (Gateway ID:$GATEWAY_EUI Version: $VER)" --cancel-label "Quit" --menu "Configuration options:" 14 80 20 \
+    VER=`cat /usr/bin/gateway-version.txt`
+    FUN=$(dialog --title "Rak Gateway (Gateway ID:$GATEWAY_EUI  Version: $VER)" --cancel-label "Quit" --menu "Configuration options:" 16 80 20 \
         1 "Set pi password" \
-        2 "Setup RAK831/RAK2245 LoRa concentrator" \
+        2 "Setup RAK Gateway LoRa concentrator" \
         3 "Edit packet-forwarder config" \
         4 "Restart packet-forwarder" \
         5 "Configure WIFI" \
+        6 "Configure LAN"	\
         3>&1 1>&2 2>&3)
     RET=$?
     if [ $RET -eq 1 ]; then
@@ -304,8 +478,15 @@ do_main_menu() {
             3) nano /opt/ttn-gateway/packet_forwarder/lora_pkt_fwd/global_conf.json && do_main_menu;;
             4) do_restart_packet_forwarder;;
             5) do_configure_wifi;;
+            6) configure_lan;;
         esac
     fi
 }
+
+
+if [ $(id -u) -ne 0 ]; then
+  printf "Script must be run as root. Try 'sudo gateway-config'\n"
+  exit 1
+fi
 
 do_main_menu

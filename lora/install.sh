@@ -21,6 +21,8 @@ echo "Version $VERSION"
 # or rely on the gateway EUI and retrieve settings files from remote (recommended)
 echo "Gateway configuration:"
 
+if [ ! -d "/usr/local/rak/gateway-config-info" ]; then mkdir /usr/local/rak/gateway-config-info; fi
+
 # Try to get gateway ID from MAC address
 # First try eth0, if that does not exist, try wlan0 (for RPi Zero)
 GATEWAY_EUI_NIC="eth0"
@@ -111,7 +113,7 @@ LOCAL_CONFIG_FILE=$INSTALL_DIR/packet_forwarder/lora_pkt_fwd/local_conf.json
 
 #config local_conf.json
 
-    echo -e "{\n\t\"gateway_conf\": {\n\t\t\"gateway_ID\": \"$GATEWAY_EUI\",\n\t\t\"serv_port_up\": 1700,\n\t\t\"serv_port_down\": 1700,\n\t\t\"serv_enabled\": true,\n\t\t\"ref_latitude\": $GATEWAY_LAT,\n\t\t\"ref_longitude\": $GATEWAY_LON,\n\t\t\"ref_altitude\": $GATEWAY_ALT \n\t}\n}" >$LOCAL_CONFIG_FILE
+    echo -e "{\n\t\"gateway_conf\": {\n\t\t\"gateway_ID\": \"$GATEWAY_EUI\" \n\t}\n}" >$LOCAL_CONFIG_FILE
 
 echo "Gateway EUI is: $GATEWAY_EUI"
 echo "The hostname is: $NEW_HOSTNAME"

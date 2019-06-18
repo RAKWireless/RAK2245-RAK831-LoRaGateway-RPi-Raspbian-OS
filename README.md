@@ -16,6 +16,13 @@ This project currently provides support for the below platforms.
 
 ##	Changelog
 
+2019-06-18 RAK V2.8
+
+* 1.Add eth0 config
+* 2.After the network is disconnected, lora_pkt_fwd restarts
+* 3.Modify loraserver.toml for us915 and cn 470
+* 4.Streamlined local_conf.json files
+
 2019-05-06 RAK V2.5
 
 * Add AP mode

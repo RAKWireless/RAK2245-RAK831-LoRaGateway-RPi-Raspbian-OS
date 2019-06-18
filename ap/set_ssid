@@ -12,3 +12,4 @@ GATEWAY_EUI=$(ip link show $GATEWAY_EUI_NIC | awk '/ether/ {print $2}' | awk -F\
 GATEWAY_EUI=${GATEWAY_EUI^^}
 
 sed -i "26c SSID=Rakwireless_$GATEWAY_EUI" /usr/local/rak/ap/create_ap.conf
+echo "Rakwireless_$GATEWAY_EUI" > /usr/local/rak/gateway-config-info/ap_ssid

@@ -221,7 +221,7 @@ get_downlink_data_delay="100ms"
   # 
   # Example:
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
-  enabled_uplink_channels=[]
+  enabled_uplink_channels=[80, 81, 82, 83, 84, 85, 86, 87]
 
 
   # Extra channel configuration.
