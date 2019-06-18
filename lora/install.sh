@@ -21,7 +21,7 @@ echo "Version $VERSION"
 # or rely on the gateway EUI and retrieve settings files from remote (recommended)
 echo "Gateway configuration:"
 
-if [ ! -d "/usr/local/rak/gateway-config-info" ]; then mkdir /usr/local/rak/gateway-config-info; fi
+if [ ! -d "/usr/local/rak/gateway-config-info" ]; then mkdir "/usr/local/rak/gateway-config-info" -p ; fi
 
 # Try to get gateway ID from MAC address
 # First try eth0, if that does not exist, try wlan0 (for RPi Zero)
@@ -144,7 +144,7 @@ fi
 systemctl disable hciuart
 cd $SCRIPT_DIR
 cp gateway-config /usr/bin/gateway-config
-cp rak-version* /usr/bin/
+cp gateway-version* /usr/bin/
 cp lora_conf /etc/ -rf
 #cp config.txt /boot/config.txt
 
