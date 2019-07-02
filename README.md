@@ -1,5 +1,3 @@
-# For new versions, please go to [rak_common_for_gateway](https://github.com/RAKWireless/rak_common_for_gateway)
-
 # RAK2245-RAK831-LoRaGateway-RPi-Raspbian-OS
 
 ttn_gateway based on the latest SX1301 driver [lora_gateway](https://github.com/Lora-net/lora_gateway) v5.0.1 and semtech [packet_forwarder](https://github.com/Lora-net/packet_forwarder) v4.0.1  
