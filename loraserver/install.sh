@@ -33,7 +33,7 @@ apt -f -y install dialog mosquitto mosquitto-clients redis-server redis-tools po
 sudo -u postgres psql -c "create role loraserver_as with login password 'dbpassword';"
 sudo -u postgres psql -c "create role loraserver_ns with login password 'dbpassword';"
 sudo -u postgres psql -c "create database loraserver_as with owner loraserver_as;"
-sudo -u postgres psql -c "create database loraserver_ns with owner loraserver_ns;;"
+sudo -u postgres psql -c "create database loraserver_ns with owner loraserver_ns;"
 sudo -u postgres psql loraserver_as -c "create extension pg_trgm;"
 sudo -u postgres psql -U postgres -f init_sql.sql
 
